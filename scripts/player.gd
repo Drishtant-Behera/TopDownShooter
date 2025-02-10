@@ -30,7 +30,7 @@ func _ready():
 	hide()
 
 func _physics_process(delta):
-	velocity = Vector2.ZERO # The player's movement vector.
+	velocity = Vector2.ZERO 
 	# Movement input
 	if Input.is_action_pressed("move_right"):
 		velocity.x += 1
@@ -105,7 +105,7 @@ func shoot():
 	bullet.setup(bullet_spawn_pos.global_transform)
 	get_tree().root.add_child(bullet)
 	shot_effect.emitting = true
-	set_push(Vector2.RIGHT.rotated(body_rotate.rotation), 200.0, 0.2)
+	set_push(Vector2.RIGHT.rotated(body_rotate.rotation), 50.0, 0.2)
 	# Play shoot sound
 	audio_player.play()
 
