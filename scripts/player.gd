@@ -1,6 +1,8 @@
 extends CharacterBody2D
 
 @export var speed: float = 360.0
+@export var acceleration: float = 800.0
+@export var friction: float = 600.0
 @export var lr_flag: bool = true # Enable body left right animation
 @export var rotate_flag: bool = true # Enable body rotation 
 
@@ -30,30 +32,30 @@ func _ready():
 	hide()
 
 func _physics_process(delta):
-	velocity = Vector2.ZERO 
-	# Movement input
+	var input_vector = Vector2.ZERO
 	if Input.is_action_pressed("move_right"):
-		velocity.x += 1
+		input_vector.x += 1
 	if Input.is_action_pressed("move_left"):
-		velocity.x -= 1
+		input_vector.x -= 1
 	if Input.is_action_pressed("move_down"):
-		velocity.y += 1
+		input_vector.y += 1
 	if Input.is_action_pressed("move_up"):
-		velocity.y -= 1
-	# Shot input
+		input_vector.y -= 1
+	
+	if input_vector != Vector2.ZERO:
+		input_vector = input_vector.normalized()
+		velocity = velocity.move_toward(input_vector * speed, acceleration * delta)
+		move_trail_effect.emitting = true
+	else:
+		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+	
 	if Input.is_action_pressed("shot") and not is_shot_cd:
 		shoot()
 		is_shot_cd = true
 		shot_timer.start(0.2)
-	# Normalize velocity if move along x and y together
-	if velocity.length() > 0:
-		velocity = velocity.normalized() * speed
-		move_trail_effect.emitting = true # Play movement trail effect
-	# Handle body_lr
+	
 	update_body_lr()
-	# Handle push
 	push_back(delta)
-	# Limit the player movement, add your character scale if needed
 	position.x = clamp(position.x, 0, screen_size.x)
 	position.y = clamp(position.y, 0, screen_size.y)
 	move_and_slide()
@@ -69,14 +71,11 @@ func setup(pos: Vector2):
 func update_body_lr():
 	if not lr_flag:
 		return
-	# Play body animation
 	if velocity.length() > 0:
-		# Move up / down
 		if lr:
 			body_lr_player.play("MoveR")
 		else:
 			body_lr_player.play("MoveL")
-		# Move left / right
 		if velocity.x > 0:
 			body_lr_player.play("MoveR")
 			body_lr_collider.scale.x = -1
@@ -86,7 +85,6 @@ func update_body_lr():
 			body_lr_collider.scale.x = 1
 			lr = false
 	else:
-		# Idle
 		if lr:
 			body_lr_player.play("IdleR")
 		else:
@@ -95,7 +93,6 @@ func update_body_lr():
 func update_body_rotate(mouse_pos: Vector2):
 	if not rotate_flag:
 		return
-	# Rotate with mouse
 	body_rotate.look_at(mouse_pos)
 	aim_pos = mouse_pos.normalized()
 
@@ -106,7 +103,6 @@ func shoot():
 	get_tree().root.add_child(bullet)
 	shot_effect.emitting = true
 	set_push(Vector2.RIGHT.rotated(body_rotate.rotation), 50.0, 0.2)
-	# Play shoot sound
 	audio_player.play()
 
 func set_push(dir: Vector2, strength: float, timer: float):
